@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Job Description Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8">GitHub Job Description Generator</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <label for="github-url" class="block text-sm font-medium text-gray-700 mb-2">
+                GitHub Repository URL
+            </label>
+            <input type="text" 
+                   id="github-url" 
+                   class="w-full p-2 border rounded-md mb-4" 
+                   placeholder="https://github.com/owner/repo">
+            <button onclick="analyzeRepo()" 
+                    class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors">
+                Generate Job Description
+            </button>
+        </div>
+
+        <div id="loading" class="hidden text-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-2 text-gray-600">Analyzing repository...</p>
+        </div>
+
+        <div id="error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6"></div>
+
+        <div id="result" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Generated Job Description</h2>
+            <pre id="job-description" class="whitespace-pre-wrap text-gray-700"></pre>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeRepo() {
+            const urlInput = document.getElementById('github-url');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const result = document.getElementById('result');
+            const jobDescription = document.getElementById('job-description');
+
+            // Reset display
+            loading.classList.remove('hidden');
+            error.classList.add('hidden');
+            result.classList.add('hidden');
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ github_url: urlInput.value }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    jobDescription.textContent = data.job_description;
+                    result.classList.remove('hidden');
+                } else {
+                    error.textContent = data.error;
+                    error.classList.remove('hidden');
+                }
+            } catch (err) {
+                error.textContent = 'An error occurred while analyzing the repository.';
+                error.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
