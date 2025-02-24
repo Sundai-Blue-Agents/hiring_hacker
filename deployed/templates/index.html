@@ -3,52 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Job Description Generator</title>
+    <title>GitHub Repository Analyzer</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen p-8">
-    <div class="max-w-3xl mx-auto">
-        <h1 class="text-3xl font-bold text-center mb-8">GitHub Job Description Generator</h1>
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8">GitHub Repository Analyzer</h1>
         
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <label for="github-url" class="block text-sm font-medium text-gray-700 mb-2">
-                GitHub Repository URL
-            </label>
-            <input type="text" 
-                   id="github-url" 
-                   class="w-full p-2 border rounded-md mb-4" 
-                   placeholder="https://github.com/owner/repo">
-            <button onclick="analyzeRepo()" 
-                    class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors">
-                Generate Job Description
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="mb-4">
+                <label for="repo-url" class="block text-sm font-medium text-gray-700">GitHub Repository URL</label>
+                <input type="text" id="repo-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="https://github.com/username/repository">
+            </div>
+            <button onclick="analyzeRepo()" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                Analyze Repository
             </button>
         </div>
 
-        <div id="loading" class="hidden text-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-            <p class="mt-2 text-gray-600">Analyzing repository...</p>
+        <div id="loading" class="hidden">
+            <div class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+            <p class="text-center mt-4 text-gray-600">Analyzing repository... This may take a few minutes.</p>
         </div>
 
-        <div id="error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6"></div>
+        <div id="results" class="hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">Repository Analysis</h2>
+                <div id="repo-analysis" class="prose"></div>
+            </div>
 
-        <div id="result" class="hidden bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold mb-4">Generated Job Description</h2>
-            <pre id="job-description" class="whitespace-pre-wrap text-gray-700"></pre>
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">Job Description</h2>
+                <div id="job-description" class="prose"></div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Interview Questions</h2>
+                <div id="interview-questions" class="prose"></div>
+            </div>
         </div>
     </div>
 
     <script>
         async function analyzeRepo() {
-            const urlInput = document.getElementById('github-url');
-            const loading = document.getElementById('loading');
-            const error = document.getElementById('error');
-            const result = document.getElementById('result');
-            const jobDescription = document.getElementById('job-description');
+            const repoUrl = document.getElementById('repo-url').value;
+            if (!repoUrl) {
+                alert('Please enter a GitHub repository URL');
+                return;
+            }
 
-            // Reset display
-            loading.classList.remove('hidden');
-            error.classList.add('hidden');
-            result.classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
 
             try {
                 const response = await fetch('/analyze', {
@@ -56,23 +62,46 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ github_url: urlInput.value }),
+                    body: JSON.stringify({ repo_url: repoUrl }),
                 });
 
                 const data = await response.json();
+                
+                if (data.success) {
+                    // Repository Info
+                    const repositoryInfo = data.results.repository_info;
+                    document.getElementById('repo-analysis').innerHTML = `
+                        <h3>Repository Info</h3>
+                        <p><strong>Name:</strong> ${repositoryInfo.name}</p>
+                        <p><strong>Description:</strong> ${repositoryInfo.description}</p>
+                        <p><strong>Stars:</strong> ${repositoryInfo.stars}</p>
+                        <p><strong>Forks:</strong> ${repositoryInfo.forks}</p>
+                        <p><strong>Open Issues:</strong> ${repositoryInfo.open_issues}</p>
+                        <pre><strong>README:</strong> ${repositoryInfo.readme}</pre>
+                    `;
 
-                if (response.ok) {
-                    jobDescription.textContent = data.job_description;
-                    result.classList.remove('hidden');
+                    // Job Description
+                    const jobDescription = data.results.analysis_results.job_description || "No job description available.";
+                    document.getElementById('job-description').innerHTML = `
+                        <h3>Job Description</h3>
+                        <p>${jobDescription}</p>
+                    `;
+
+                    // Interview Questions
+                    const interviewQuestions = data.results.analysis_results.interview_questions || "No interview questions available.";
+                    document.getElementById('interview-questions').innerHTML = `
+                        <h3>Interview Questions</h3>
+                        <pre>${interviewQuestions}</pre>
+                    `;
+
+                    document.getElementById('results').classList.remove('hidden');
                 } else {
-                    error.textContent = data.error;
-                    error.classList.remove('hidden');
+                    alert('Error analyzing repository: ' + data.error);
                 }
-            } catch (err) {
-                error.textContent = 'An error occurred while analyzing the repository.';
-                error.classList.remove('hidden');
+            } catch (error) {
+                alert('Error analyzing repository: ' + error);
             } finally {
-                loading.classList.add('hidden');
+                document.getElementById('loading').classList.add('hidden');
             }
         }
     </script>
