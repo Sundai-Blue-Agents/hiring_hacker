@@ -2,3 +2,4 @@ streamlit
 requests
 crewai
 pysqlite3-binary
+chromadb==0.4.24
