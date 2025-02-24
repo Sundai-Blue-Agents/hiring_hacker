@@ -1,8 +1,13 @@
 import streamlit as st
 import requests
 import os
+import sqlite3
 from crewai import Agent, Crew, Task
 import base64
+
+# Manually set path to the latest SQLite
+os.environ["LD_LIBRARY_PATH"] = "/home/adminuser/venv/lib/python3.12/lib-dynload"
+sys.modules["sqlite3"] = __import__("pysqlite3")
 
 # GitHub API Token (use environment variables for security)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
