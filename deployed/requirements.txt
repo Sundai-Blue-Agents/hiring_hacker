@@ -3,8 +3,7 @@ requests
 python-dotenv
 transformers
 streamlit
-crewai
-crewai_tools
+crewai[tools]
 PyGithub
 openai
 pysqlite3-binary>=0.5.4
