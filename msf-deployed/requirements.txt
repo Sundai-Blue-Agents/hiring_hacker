@@ -7,4 +7,3 @@ crewai>=0.1.0
 crewai_tools>=0.1.0
 PyGithub>=1.55
 openai>=1.0.0
-serper-dev>=0.1.0
